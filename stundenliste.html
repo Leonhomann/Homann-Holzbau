@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stundenliste – Homann Holzbau</title>
+<meta name="description" content="Interne Stundenliste: Arbeitszeiten je Baustelle buchen, auswerten und als Nachweis exportieren."/>
+<meta name="robots" content="noindex, nofollow"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{
+    extend:{
+      colors:{
+        primary:"#1B365D",
+        "primary-dark":"#122544",
+        secondary:"#78582f",
+        gold:"#C19A6B",
+        "on-primary":"#ffffff",
+        "on-secondary":"#ffffff",
+        "on-surface":"#1a1c1c",
+        "on-surface-variant":"#44474e",
+        surface:"#f9f9f9",
+        "surface-container-low":"#f4f3f3",
+        "surface-container":"#eeeeee",
+        "surface-container-high":"#e8e8e8",
+        "outline-variant":"#c4c6cf",
+        outline:"#74777f",
+      },
+      fontFamily:{ headline:["Inter"], body:["Inter"] }
+    }
+  }
+};
+</script>
+<style>
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;vertical-align:middle;}
+.blueprint-grid{background-image:radial-gradient(circle,#c4c6cf 1px,transparent 1px);background-size:40px 40px;}
+.glass-nav{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+
+/* Druckansicht: sauberer Arbeitszeitnachweis */
+@media print{
+  .no-print{display:none !important;}
+  .print-only{display:block !important;}
+  body{background:#fff !important;}
+  main{padding:0 !important;max-width:none !important;}
+  .print-flat{box-shadow:none !important;border:1px solid #c4c6cf !important;border-radius:0 !important;}
+  table{font-size:10pt;}
+  thead{display:table-header-group;}
+  tr{break-inside:avoid;}
+  @page{margin:16mm;}
+}
+.print-only{display:none;}
+</style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+
+<!-- NAV -->
+<nav class="fixed top-0 w-full z-50 bg-white/90 glass-nav border-b border-slate-200/50 shadow-sm no-print">
+  <div class="flex justify-between items-center max-w-7xl mx-auto px-6 py-3">
+    <a href="index.html" class="flex items-center gap-2 text-primary hover:text-gold transition-colors">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span class="font-bold text-sm tracking-tight">Homann Holzbau</span>
+    </a>
+    <div class="flex items-center gap-3">
+      <span class="hidden sm:inline text-[0.65rem] uppercase tracking-[0.2em] font-bold text-on-surface-variant">Interner Bereich</span>
+      <span class="bg-primary text-white px-4 py-1.5 rounded-lg font-medium text-sm">Stundenliste</span>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-6 pt-28 pb-20">
+
+  <!-- KOPF -->
+  <header class="mb-10 no-print">
+    <p class="text-xs uppercase tracking-widest text-gold font-bold mb-3">Zeiterfassung</p>
+    <div class="h-1 w-16 bg-primary mb-6"></div>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">Stundenliste buchen.</h1>
+    <p class="mt-4 text-on-surface-variant leading-relaxed max-w-2xl">
+      Arbeitszeiten je Baustelle erfassen, Monatssummen auswerten und als Nachweis drucken oder exportieren.
+      Die Daten werden ausschließlich lokal in diesem Browser gespeichert &mdash; sichern Sie regelmäßig über <strong class="text-primary">Backup</strong>.
+    </p>
+  </header>
+
+  <!-- Druckkopf -->
+  <div class="print-only mb-6">
+    <h1 style="font-size:16pt;font-weight:800;">Arbeitszeitnachweis &ndash; Homann Holzbau</h1>
+    <p id="printSubtitle" style="font-size:10pt;margin-top:4px;"></p>
+  </div>
+
+  <!-- BUCHUNGSFORMULAR -->
+  <section class="mb-10 no-print">
+    <form id="buchungForm" class="bg-white rounded-2xl border border-outline-variant/20 shadow-xl p-6 md:p-8 relative overflow-hidden">
+      <div class="absolute inset-0 blueprint-grid opacity-[0.03] pointer-events-none"></div>
+      <div class="relative z-10">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <h2 class="text-xl font-bold text-primary tracking-tight flex items-center gap-2">
+            <span class="material-symbols-outlined text-gold">more_time</span>
+            <span id="formTitel">Neue Buchung</span>
+          </h2>
+          <button type="button" id="abbrechenBtn" class="hidden text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
+            Bearbeitung abbrechen
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label for="datum" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Datum</label>
+            <input type="date" id="datum" required class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+          <div class="lg:col-span-2">
+            <label for="projekt" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Projekt / Baustelle</label>
+            <input type="text" id="projekt" required maxlength="80" list="projektListe" placeholder="z.&nbsp;B. Carport Familie Meier" class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+            <datalist id="projektListe"></datalist>
+          </div>
+          <div>
+            <label for="satz" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Stundensatz (&euro;)</label>
+            <input type="text" id="satz" inputmode="decimal" autocomplete="off" placeholder="0,00" class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+
+          <div>
+            <label for="beginn" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Beginn</label>
+            <input type="time" id="beginn" required class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+          <div>
+            <label for="ende" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Ende</label>
+            <input type="time" id="ende" required class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+          <div>
+            <label for="pause" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Pause (Min.)</label>
+            <input type="number" id="pause" min="0" step="5" value="30" required class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+          <div>
+            <span class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Arbeitszeit</span>
+            <output id="vorschau" for="beginn ende pause" class="flex items-center h-[42px] px-3 rounded-lg bg-surface-container-low border border-outline-variant/30 text-sm font-bold text-primary">&ndash;</output>
+          </div>
+
+          <div class="md:col-span-2 lg:col-span-4">
+            <label for="taetigkeit" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Tätigkeit</label>
+            <input type="text" id="taetigkeit" maxlength="160" placeholder="z.&nbsp;B. Sparren abbinden, Schalung aufbringen" class="w-full rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary"/>
+          </div>
+        </div>
+
+        <p id="formFehler" class="hidden mt-4 text-sm font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button type="submit" class="px-8 py-3 bg-primary text-white rounded-lg font-semibold hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined">check</span>
+            <span id="submitLabel">Stunden buchen</span>
+          </button>
+          <button type="reset" class="px-6 py-3 bg-white border border-outline-variant/50 text-primary rounded-lg font-semibold hover:bg-surface-container-low transition-all">
+            Zurücksetzen
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- FILTER + SUMMEN -->
+  <section class="mb-6">
+    <div class="flex flex-wrap items-end gap-4 mb-6 no-print">
+      <div>
+        <label for="filterMonat" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Monat</label>
+        <select id="filterMonat" class="rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary">
+          <option value="">Alle Monate</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterProjekt" class="block text-xs font-bold text-primary uppercase tracking-widest mb-2">Projekt</label>
+        <select id="filterProjekt" class="rounded-lg border-outline-variant/50 text-sm focus:border-primary focus:ring-primary">
+          <option value="">Alle Projekte</option>
+        </select>
+      </div>
+      <div class="flex flex-wrap gap-2 ml-auto">
+        <button type="button" id="csvBtn" class="px-4 py-2.5 bg-white border border-outline-variant/50 text-primary rounded-lg font-semibold text-sm hover:bg-surface-container-low transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">download</span> CSV
+        </button>
+        <button type="button" id="druckBtn" class="px-4 py-2.5 bg-white border border-outline-variant/50 text-primary rounded-lg font-semibold text-sm hover:bg-surface-container-low transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">print</span> Nachweis drucken
+        </button>
+        <button type="button" id="backupBtn" class="px-4 py-2.5 bg-white border border-outline-variant/50 text-primary rounded-lg font-semibold text-sm hover:bg-surface-container-low transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">save</span> Backup
+        </button>
+        <label class="px-4 py-2.5 bg-white border border-outline-variant/50 text-primary rounded-lg font-semibold text-sm hover:bg-surface-container-low transition-all flex items-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-lg">upload</span> Import
+          <input type="file" id="importInput" accept="application/json,.json" class="sr-only"/>
+        </label>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-outline-variant/20 border border-outline-variant/20 rounded-xl overflow-hidden shadow-sm print-flat">
+      <div class="bg-surface p-5">
+        <p class="text-[0.65rem] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Buchungen</p>
+        <p id="summeAnzahl" class="text-2xl font-extrabold text-primary">0</p>
+      </div>
+      <div class="bg-surface p-5">
+        <p class="text-[0.65rem] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Arbeitstage</p>
+        <p id="summeTage" class="text-2xl font-extrabold text-primary">0</p>
+      </div>
+      <div class="bg-surface p-5">
+        <p class="text-[0.65rem] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Stunden</p>
+        <p id="summeStunden" class="text-2xl font-extrabold text-primary">0,00</p>
+      </div>
+      <div class="bg-surface p-5">
+        <p class="text-[0.65rem] uppercase tracking-widest text-on-surface-variant font-bold mb-1">Betrag</p>
+        <p id="summeBetrag" class="text-2xl font-extrabold text-gold">0,00 &euro;</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABELLE -->
+  <section>
+    <div class="bg-white border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden print-flat">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-surface-container-low border-b border-outline-variant/30">
+            <tr class="text-left">
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary whitespace-nowrap">Datum</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary">Projekt</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary">Tätigkeit</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary whitespace-nowrap">Von&ndash;Bis</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary text-right whitespace-nowrap">Pause</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary text-right whitespace-nowrap">Std.</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary text-right whitespace-nowrap">Betrag</th>
+              <th scope="col" class="px-4 py-3 text-[0.65rem] uppercase tracking-widest font-bold text-primary text-right no-print">Aktion</th>
+            </tr>
+          </thead>
+          <tbody id="tabellenBody"></tbody>
+        </table>
+      </div>
+      <p id="leerHinweis" class="hidden px-6 py-16 text-center text-on-surface-variant">
+        <span class="material-symbols-outlined text-4xl text-outline-variant block mb-3">schedule</span>
+        Noch keine Stunden gebucht.
+      </p>
+    </div>
+
+    <!-- Unterschriftszeilen für den gedruckten Nachweis -->
+    <div class="print-only" style="margin-top:28mm;">
+      <table style="width:100%;font-size:10pt;">
+        <tr>
+          <td style="border-top:1px solid #1a1c1c;padding-top:4px;width:45%;">Ort, Datum</td>
+          <td style="width:10%;"></td>
+          <td style="border-top:1px solid #1a1c1c;padding-top:4px;width:45%;">Unterschrift</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer class="bg-slate-50 border-t border-slate-200 no-print">
+  <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between gap-4">
+    <p class="text-[0.65rem] uppercase tracking-widest text-slate-400">&copy; 2025 Homann Holzbau &middot; Interne Zeiterfassung</p>
+    <a href="index.html" class="text-xs text-slate-500 hover:text-gold transition-colors">Zurück zur Website</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var SPEICHER = "hh_stundenliste_v1";
+  var EINSTELLUNGEN = "hh_stundenliste_einstellungen_v1";
+  var WOCHENTAGE = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+
+  var eintraege = [];
+  var bearbeiteId = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- Speicher ---------- */
+
+  function laden(){
+    try{
+      var roh = localStorage.getItem(SPEICHER);
+      var daten = roh ? JSON.parse(roh) : [];
+      return Array.isArray(daten) ? daten.filter(gueltig) : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function sichern(){
+    try{
+      localStorage.setItem(SPEICHER, JSON.stringify(eintraege));
+    }catch(e){
+      fehlerZeigen("Speichern fehlgeschlagen — der Browser-Speicher ist voll oder gesperrt. Bitte ein Backup erstellen.");
+    }
+  }
+
+  function gueltig(e){
+    return e && typeof e.datum === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.datum)
+      && typeof e.beginn === "string" && typeof e.ende === "string"
+      && typeof e.projekt === "string";
+  }
+
+  function satzMerken(satz){
+    try{ localStorage.setItem(EINSTELLUNGEN, JSON.stringify({ satz: satz })); }catch(e){}
+  }
+
+  function satzLesen(){
+    try{
+      var s = JSON.parse(localStorage.getItem(EINSTELLUNGEN) || "{}");
+      return typeof s.satz === "number" ? s.satz : null;
+    }catch(e){ return null; }
+  }
+
+  /* ---------- Berechnung & Formatierung ---------- */
+
+  function minuten(zeit){
+    var t = /^(\d{2}):(\d{2})$/.exec(zeit || "");
+    return t ? parseInt(t[1],10) * 60 + parseInt(t[2],10) : NaN;
+  }
+
+  function dauerMinuten(e){
+    var d = minuten(e.ende) - minuten(e.beginn) - (e.pause || 0);
+    return d > 0 ? d : 0;
+  }
+
+  function stunden(e){ return dauerMinuten(e) / 60; }
+
+  function betrag(e){
+    return typeof e.satz === "number" ? stunden(e) * e.satz : 0;
+  }
+
+  function zahl(n, nachkomma){
+    return n.toLocaleString("de-DE", {
+      minimumFractionDigits: nachkomma,
+      maximumFractionDigits: nachkomma
+    });
+  }
+
+  function euro(n){ return zahl(n, 2) + " €"; }
+
+  // Ohne Tausenderpunkt, damit der Wert wieder einlesbar ist
+  function satzText(n){ return n.toFixed(2).replace(".", ","); }
+
+  // Nimmt Komma wie Punkt an; "" -> null, ungueltig -> NaN
+  function satzParsen(roh){
+    var s = String(roh).replace(/[\s\u00A0€]/g, "");
+    if(s === "") return null;
+    if(s.indexOf(",") !== -1) s = s.replace(/\./g, "").replace(",", ".");
+    if(!/^\d+(\.\d+)?$/.test(s)) return NaN;
+    var n = parseFloat(s);
+    return isFinite(n) ? n : NaN;
+  }
+
+  function dauerText(min){
+    var h = Math.floor(min / 60);
+    var m = min % 60;
+    return h + ":" + (m < 10 ? "0" : "") + m + " h";
+  }
+
+  function datumText(iso){
+    var t = iso.split("-");
+    var d = new Date(+t[0], +t[1] - 1, +t[2]);
+    return WOCHENTAGE[d.getDay()] + ", " + t[2] + "." + t[1] + "." + t[0];
+  }
+
+  function monatText(ym){
+    var t = ym.split("-");
+    var d = new Date(+t[0], +t[1] - 1, 1);
+    return d.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  }
+
+  function heuteIso(){
+    var d = new Date();
+    var m = d.getMonth() + 1, t = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (t < 10 ? "0" : "") + t;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+
+  /* ---------- Formular ---------- */
+
+  function fehlerZeigen(text){
+    var el = $("formFehler");
+    el.textContent = text;
+    el.classList.remove("hidden");
+  }
+
+  function fehlerVerbergen(){
+    $("formFehler").classList.add("hidden");
+  }
+
+  function formularLesen(){
+    var beginn = $("beginn").value;
+    var ende = $("ende").value;
+    var pause = parseInt($("pause").value, 10);
+    var satzRoh = $("satz").value.trim();
+
+    if(!$("datum").value) return { fehler: "Bitte ein Datum angeben." };
+    if(!$("projekt").value.trim()) return { fehler: "Bitte Projekt bzw. Baustelle angeben." };
+    if(isNaN(minuten(beginn)) || isNaN(minuten(ende))) return { fehler: "Bitte Beginn und Ende angeben." };
+    if(minuten(ende) <= minuten(beginn)) return { fehler: "Das Ende muss nach dem Beginn liegen." };
+    if(isNaN(pause) || pause < 0) return { fehler: "Die Pause muss 0 Minuten oder mehr betragen." };
+    if(minuten(ende) - minuten(beginn) - pause <= 0) return { fehler: "Die Pause ist länger als die erfasste Anwesenheit." };
+
+    var satz = satzParsen(satzRoh);
+    if(isNaN(satz)) return { fehler: "Der Stundensatz muss eine Zahl ab 0 sein, z. B. 62,50." };
+
+    return {
+      eintrag: {
+        id: bearbeiteId || (String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8)),
+        datum: $("datum").value,
+        projekt: $("projekt").value.trim(),
+        taetigkeit: $("taetigkeit").value.trim(),
+        beginn: beginn,
+        ende: ende,
+        pause: pause,
+        satz: satz
+      }
+    };
+  }
+
+  function vorschauAktualisieren(){
+    var von = minuten($("beginn").value);
+    var bis = minuten($("ende").value);
+    var pause = parseInt($("pause").value, 10) || 0;
+    var el = $("vorschau");
+
+    if(isNaN(von) || isNaN(bis) || bis <= von || bis - von - pause <= 0){
+      el.textContent = "–";
+      return;
+    }
+    var min = bis - von - pause;
+    el.textContent = dauerText(min) + "  (" + zahl(min / 60, 2) + ")";
+  }
+
+  // Setzt die Felder selbst zurueck statt form.reset() aufzurufen — sonst
+  // loest der Reset-Listener diese Funktion erneut aus (Endlosschleife).
+  function formularZuruecksetzen(){
+    bearbeiteId = null;
+    $("projekt").value = "";
+    $("taetigkeit").value = "";
+    $("beginn").value = "";
+    $("ende").value = "";
+    $("datum").value = heuteIso();
+    var satz = satzLesen();
+    $("satz").value = satz === null ? "" : satzText(satz);
+    $("pause").value = 30;
+    $("formTitel").textContent = "Neue Buchung";
+    $("submitLabel").textContent = "Stunden buchen";
+    $("abbrechenBtn").classList.add("hidden");
+    fehlerVerbergen();
+    vorschauAktualisieren();
+  }
+
+  function bearbeiten(id){
+    var e = eintraege.filter(function(x){ return x.id === id; })[0];
+    if(!e) return;
+    bearbeiteId = id;
+    $("datum").value = e.datum;
+    $("projekt").value = e.projekt;
+    $("taetigkeit").value = e.taetigkeit || "";
+    $("beginn").value = e.beginn;
+    $("ende").value = e.ende;
+    $("pause").value = e.pause;
+    $("satz").value = typeof e.satz === "number" ? satzText(e.satz) : "";
+    $("formTitel").textContent = "Buchung bearbeiten";
+    $("submitLabel").textContent = "Änderung speichern";
+    $("abbrechenBtn").classList.remove("hidden");
+    fehlerVerbergen();
+    vorschauAktualisieren();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function loeschen(id){
+    var e = eintraege.filter(function(x){ return x.id === id; })[0];
+    if(!e) return;
+    if(!window.confirm("Buchung vom " + datumText(e.datum) + " (" + e.projekt + ") wirklich löschen?")) return;
+    eintraege = eintraege.filter(function(x){ return x.id !== id; });
+    if(bearbeiteId === id) formularZuruecksetzen();
+    sichern();
+    alles();
+  }
+
+  /* ---------- Filter & Darstellung ---------- */
+
+  function gefiltert(){
+    var monat = $("filterMonat").value;
+    var projekt = $("filterProjekt").value;
+    return eintraege.filter(function(e){
+      if(monat && e.datum.slice(0, 7) !== monat) return false;
+      if(projekt && e.projekt !== projekt) return false;
+      return true;
+    }).sort(function(a, b){
+      if(a.datum !== b.datum) return a.datum < b.datum ? 1 : -1;
+      return a.beginn < b.beginn ? 1 : -1;
+    });
+  }
+
+  function filterFuellen(){
+    var monate = {}, projekte = {};
+    eintraege.forEach(function(e){
+      monate[e.datum.slice(0, 7)] = true;
+      projekte[e.projekt] = true;
+    });
+
+    var monatsListe = Object.keys(monate).sort().reverse();
+    var projektListe = Object.keys(projekte).sort(function(a, b){ return a.localeCompare(b, "de"); });
+
+    auswahlFuellen($("filterMonat"), monatsListe, monatText, "Alle Monate");
+    auswahlFuellen($("filterProjekt"), projektListe, function(p){ return p; }, "Alle Projekte");
+
+    var dl = $("projektListe");
+    dl.innerHTML = "";
+    projektListe.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p;
+      dl.appendChild(o);
+    });
+  }
+
+  function auswahlFuellen(select, werte, beschriften, alleLabel){
+    var vorher = select.value;
+    select.innerHTML = "";
+
+    var alle = document.createElement("option");
+    alle.value = "";
+    alle.textContent = alleLabel;
+    select.appendChild(alle);
+
+    werte.forEach(function(w){
+      var o = document.createElement("option");
+      o.value = w;
+      o.textContent = beschriften(w);
+      select.appendChild(o);
+    });
+
+    select.value = werte.indexOf(vorher) !== -1 ? vorher : "";
+  }
+
+  function tabelleZeichnen(liste){
+    var body = $("tabellenBody");
+    body.innerHTML = "";
+    $("leerHinweis").classList.toggle("hidden", liste.length > 0);
+
+    liste.forEach(function(e){
+      var tr = document.createElement("tr");
+      tr.className = "border-b border-outline-variant/20 hover:bg-surface-container-low/60 transition-colors";
+      tr.innerHTML =
+        '<td class="px-4 py-3 whitespace-nowrap font-semibold text-primary">' + escapeHtml(datumText(e.datum)) + '</td>' +
+        '<td class="px-4 py-3">' + escapeHtml(e.projekt) + '</td>' +
+        '<td class="px-4 py-3 text-on-surface-variant">' + escapeHtml(e.taetigkeit || "–") + '</td>' +
+        '<td class="px-4 py-3 whitespace-nowrap text-on-surface-variant">' + escapeHtml(e.beginn) + '–' + escapeHtml(e.ende) + '</td>' +
+        '<td class="px-4 py-3 text-right whitespace-nowrap text-on-surface-variant">' + e.pause + ' min</td>' +
+        '<td class="px-4 py-3 text-right whitespace-nowrap font-bold text-primary">' + zahl(stunden(e), 2) + '</td>' +
+        '<td class="px-4 py-3 text-right whitespace-nowrap">' + (typeof e.satz === "number" ? escapeHtml(euro(betrag(e))) : '–') + '</td>' +
+        '<td class="px-4 py-3 text-right whitespace-nowrap no-print">' +
+          '<button type="button" data-aktion="bearbeiten" data-id="' + escapeHtml(e.id) + '" title="Bearbeiten" aria-label="Buchung bearbeiten" class="text-on-surface-variant hover:text-primary transition-colors px-1">' +
+            '<span class="material-symbols-outlined text-lg">edit</span></button>' +
+          '<button type="button" data-aktion="loeschen" data-id="' + escapeHtml(e.id) + '" title="Löschen" aria-label="Buchung löschen" class="text-on-surface-variant hover:text-red-700 transition-colors px-1">' +
+            '<span class="material-symbols-outlined text-lg">delete</span></button>' +
+        '</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function summenZeichnen(liste){
+    var min = 0, summe = 0, tage = {};
+    liste.forEach(function(e){
+      min += dauerMinuten(e);
+      summe += betrag(e);
+      tage[e.datum] = true;
+    });
+
+    $("summeAnzahl").textContent = liste.length;
+    $("summeTage").textContent = Object.keys(tage).length;
+    $("summeStunden").textContent = zahl(min / 60, 2);
+    $("summeBetrag").textContent = euro(summe);
+
+    var monat = $("filterMonat").value;
+    var projekt = $("filterProjekt").value;
+    $("printSubtitle").textContent =
+      (monat ? monatText(monat) : "Gesamtzeitraum") +
+      (projekt ? " · " + projekt : "") +
+      " · " + zahl(min / 60, 2) + " Stunden an " + Object.keys(tage).length + " Arbeitstagen";
+  }
+
+  function alles(){
+    filterFuellen();
+    var liste = gefiltert();
+    tabelleZeichnen(liste);
+    summenZeichnen(liste);
+  }
+
+  /* ---------- Export ---------- */
+
+  function dateiLaden(inhalt, name, typ){
+    var blob = new Blob([inhalt], { type: typ });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function csvFeld(wert){
+    return '"' + String(wert).replace(/"/g, '""') + '"';
+  }
+
+  function csvExport(){
+    var liste = gefiltert();
+    if(!liste.length){
+      window.alert("Für die aktuelle Auswahl gibt es keine Buchungen zum Export.");
+      return;
+    }
+
+    var zeilen = [["Datum","Projekt","Taetigkeit","Beginn","Ende","Pause (Min)","Stunden","Stundensatz","Betrag"].join(";")];
+    liste.slice().reverse().forEach(function(e){
+      zeilen.push([
+        csvFeld(e.datum.split("-").reverse().join(".")),
+        csvFeld(e.projekt),
+        csvFeld(e.taetigkeit || ""),
+        csvFeld(e.beginn),
+        csvFeld(e.ende),
+        csvFeld(e.pause),
+        csvFeld(zahl(stunden(e), 2)),
+        csvFeld(typeof e.satz === "number" ? satzText(e.satz) : ""),
+        csvFeld(typeof e.satz === "number" ? zahl(betrag(e), 2) : "")
+      ].join(";"));
+    });
+
+    var monat = $("filterMonat").value;
+    // BOM, damit Excel die Umlaute korrekt als UTF-8 liest
+    dateiLaden("﻿" + zeilen.join("\r\n"), "stundenliste-" + (monat || "gesamt") + ".csv", "text/csv;charset=utf-8");
+  }
+
+  function backup(){
+    dateiLaden(
+      JSON.stringify({ version: 1, exportiert: new Date().toISOString(), eintraege: eintraege }, null, 2),
+      "stundenliste-backup-" + heuteIso() + ".json",
+      "application/json"
+    );
+  }
+
+  function importieren(datei){
+    var leser = new FileReader();
+    leser.onload = function(){
+      var daten;
+      try{
+        daten = JSON.parse(String(leser.result));
+      }catch(e){
+        window.alert("Die Datei konnte nicht gelesen werden — sie ist kein gültiges Backup.");
+        return;
+      }
+
+      var neu = (daten && Array.isArray(daten.eintraege) ? daten.eintraege : []).filter(gueltig);
+      if(!neu.length){
+        window.alert("Das Backup enthält keine gültigen Buchungen.");
+        return;
+      }
+      if(!window.confirm(neu.length + " Buchung(en) importieren? Bereits vorhandene Buchungen bleiben erhalten.")) return;
+
+      var bekannt = {};
+      eintraege.forEach(function(e){ bekannt[e.id] = true; });
+
+      var uebernommen = 0;
+      neu.forEach(function(e){
+        if(bekannt[e.id]) return;
+        bekannt[e.id] = true;
+        eintraege.push(e);
+        uebernommen++;
+      });
+
+      sichern();
+      alles();
+      window.alert(uebernommen + " Buchung(en) importiert, " + (neu.length - uebernommen) + " bereits vorhanden.");
+    };
+    leser.readAsText(datei);
+  }
+
+  /* ---------- Ereignisse ---------- */
+
+  $("buchungForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var ergebnis = formularLesen();
+    if(ergebnis.fehler){
+      fehlerZeigen(ergebnis.fehler);
+      return;
+    }
+
+    var e = ergebnis.eintrag;
+    if(bearbeiteId){
+      eintraege = eintraege.map(function(x){ return x.id === bearbeiteId ? e : x; });
+    }else{
+      eintraege.push(e);
+    }
+    if(typeof e.satz === "number") satzMerken(e.satz);
+
+    sichern();
+    formularZuruecksetzen();
+    alles();
+  });
+
+  $("buchungForm").addEventListener("reset", function(){
+    window.setTimeout(formularZuruecksetzen, 0);
+  });
+
+  ["beginn","ende","pause"].forEach(function(id){
+    $(id).addEventListener("input", vorschauAktualisieren);
+  });
+
+  $("abbrechenBtn").addEventListener("click", formularZuruecksetzen);
+  $("filterMonat").addEventListener("change", alles);
+  $("filterProjekt").addEventListener("change", alles);
+  $("csvBtn").addEventListener("click", csvExport);
+  $("druckBtn").addEventListener("click", function(){ window.print(); });
+  $("backupBtn").addEventListener("click", backup);
+
+  $("importInput").addEventListener("change", function(){
+    if(this.files && this.files[0]) importieren(this.files[0]);
+    this.value = "";
+  });
+
+  $("tabellenBody").addEventListener("click", function(ev){
+    var btn = ev.target.closest("button[data-aktion]");
+    if(!btn) return;
+    if(btn.getAttribute("data-aktion") === "bearbeiten") bearbeiten(btn.getAttribute("data-id"));
+    else loeschen(btn.getAttribute("data-id"));
+  });
+
+  /* ---------- Start ---------- */
+
+  eintraege = laden();
+  formularZuruecksetzen();
+  alles();
+})();
+</script>
+
+</body>
+</html>
