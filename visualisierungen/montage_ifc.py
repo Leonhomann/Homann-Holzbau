@@ -7,7 +7,7 @@ import re
 
 IFC = 'vordach.ifc'
 PHOTO = 'haus_neu.jpg'
-CAM = np.load('camera_D14.npy')        # f, D, yaw, pitch, yc, zc  (Fit an Wand-Homographie)
+CAM = np.load('camera_D40.npy')        # f, D, yaw, pitch, yc, zc  (Fit an Wand-Homographie)
 
 # ---------------- mini IFC parser (tessellierte Geometrie) ----------------
 ents = {}
