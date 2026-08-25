@@ -2,7 +2,7 @@
 
 **Bürotag 1 · Selbstlern-Mappe · ca. 5–6 Stunden**
 
-Du brauchst: dieses Heft, Stift, kariertes Papier. Bearbeite die Teile A–C
+Du brauchst: dieses Heft, Stift, kariertes Papier. Bearbeite die Teile A–D
 der Reihenfolge nach. Schreibe deine Antworten in ganzen Sätzen auf – das
 kannst du später direkt für deinen Praktikumsbericht verwenden.
 
@@ -53,7 +53,66 @@ Wetter und Höhe.
 
 ---
 
-## Teil B – Arbeitssicherheit (ca. 1,5 Std.)
+## Teil B – Zimmerer-Vokabular: So spricht die Baustelle (ca. 1 Std.)
+
+Jeder Beruf hat seine eigene Sprache. Wer die Begriffe kennt, versteht auf
+der Baustelle sofort, was gemeint ist. Lies die Tabelle in Ruhe durch –
+viele Begriffe wirst du in den nächsten Tagen wiederhören!
+
+### Werkzeug & Arbeiten
+
+| Begriff | Bedeutung |
+|---|---|
+| **Zollstock** | Gliedermaßstab zum Messen – das wichtigste Werkzeug überhaupt |
+| **Anreißen** | Maße und Linien mit Bleistift und Winkel auf das Holz übertragen |
+| **Aufmaß** | Ausmessen am Bau, z. B. um Material zu bestellen oder abzurechnen |
+| **Abbund** | Zuschneiden und Vorbereiten aller Hölzer nach Plan – früher von Hand, heute oft mit computergesteuerter Maschine |
+| **Ablängen** | ein Holz auf die richtige Länge sägen |
+| **Fase** | schräg angeschnittene Kante (damit nichts splittert und es gut aussieht) |
+| **Stemmen** | mit dem Stemmeisen Holz ausarbeiten, z. B. ein Zapfenloch |
+
+### Genau bauen
+
+| Begriff | Bedeutung |
+|---|---|
+| **im Lot / lotrecht** | genau senkrecht (geprüft mit Wasserwaage oder Lot) |
+| **in der Waage / waagerecht** | genau horizontal |
+| **in der Flucht** | mehrere Punkte/Bauteile liegen auf einer geraden Linie |
+| **bündig** | zwei Bauteile schließen exakt auf gleicher Höhe/Ebene ab |
+| **winklig / im Winkel** | genau 90° zueinander |
+| **Achsmaß** | Abstand von Bauteilmitte zu Bauteilmitte (z. B. bei Sparren) |
+
+### Bauteile & Konstruktion
+
+| Begriff | Bedeutung |
+|---|---|
+| **Schwelle** | unterster waagerechter Balken einer Holzwand |
+| **Rähm** | oberster waagerechter Balken einer Holzwand |
+| **Ständer / Pfosten** | senkrechte Hölzer in der Wand |
+| **Riegel** | waagerechtes Holz zwischen den Ständern |
+| **Strebe** | schräges Holz, das die Konstruktion aussteift |
+| **Sparren** | schräge Balken, die die Dachfläche tragen |
+| **Pfette** | waagerechter Balken, auf dem Sparren aufliegen |
+| **First** | oberste, waagerechte Kante des Dachs |
+| **Traufe** | untere Dachkante (dort hängt die Regenrinne) |
+| **Giebel** | dreieckige Wandfläche unter dem Dach |
+| **Schalung** | flächige Bretter-/Plattenlage, z. B. auf dem Dach |
+| **Lattung** | dünne Hölzer (Latten), z. B. als Unterkonstruktion für Dachziegel |
+| **Dämmung** | Material, das Wärme im Haus hält (z. B. Holzfaser, Mineralwolle) |
+| **Dampfbremse** | Folie, die die Dämmung vor Feuchtigkeit aus dem Wohnraum schützt |
+| **Richtfest** | Fest, wenn der Dachstuhl steht – mit Richtspruch und Richtkranz |
+
+### Aufgaben B (Vokabular)
+
+1. Lies alle drei Tabellen zweimal durch. Markiere Begriffe, die du auf der Baustelle schon gehört hast.
+2. **Selbsttest:** Decke die rechte Spalte ab und erkläre 15 Begriffe aus dem Kopf. Hake ab, welche sitzen – den Rest morgen nochmal.
+3. Erkläre den Unterschied zwischen: a) lotrecht und waagerecht, b) First und Traufe, c) Schwelle und Rähm, d) bündig und in der Flucht.
+4. Bilde fünf „Baustellensätze", in denen je mindestens zwei Vokabeln vorkommen (z. B. „Der Pfosten steht im Lot und schließt bündig mit der Schwelle ab.").
+5. **Vokabelheft anlegen:** Reserviere eine Doppelseite in deinem Heft. Notiere dort an den restlichen Baustellentagen jedes neue Wort, das du aufschnappst – Ziel: mindestens 10 neue Begriffe bis zum Ende des Praktikums.
+
+---
+
+## Teil C – Arbeitssicherheit (ca. 1,5 Std.)
 
 ### Lesetext 3: Warum Sicherheit im Holzbau so wichtig ist
 
@@ -78,7 +137,7 @@ Für dich als Praktikantin gilt zusätzlich das
 gefährlichen Arbeiten, begrenzte Arbeitszeiten. Das ist kein Misstrauen –
 das ist Gesetz und schützt dich.
 
-### Aufgaben B
+### Aufgaben C
 
 1. Erstelle eine **PSA-Tabelle** mit drei Spalten: Ausrüstung / schützt vor / wann nötig. Fülle sie für mindestens sechs Ausrüstungsteile aus.
 2. Was ist die gefährlichste Unfallart im Zimmererhandwerk und mit welchen zwei Maßnahmen wird ihr vorgebeugt?
@@ -88,7 +147,7 @@ das ist Gesetz und schützt dich.
 
 ---
 
-## Teil C – Mein Praktikum, mein Bericht (ca. 1,5 Std.)
+## Teil D – Mein Praktikum, mein Bericht (ca. 1 Std.)
 
 Die meisten Schulen verlangen einen **Praktikumsbericht**. Heute legst du
 das Fundament dafür:
@@ -102,7 +161,8 @@ das Fundament dafür:
 ## Tages-Checkliste
 
 - [ ] Aufgaben A 1–5 schriftlich fertig
-- [ ] PSA-Tabelle und Aufgaben B 2–5 fertig
+- [ ] Vokabular gelernt, Selbsttest gemacht, Vokabelheft angelegt
+- [ ] PSA-Tabelle und Aufgaben C 2–5 fertig
 - [ ] Betriebsporträt begonnen, Tagesberichte nachgezogen
 - [ ] Interviewfragen notiert
 - [ ] Offene Fragen für die Abend-Besprechung aufgeschrieben
