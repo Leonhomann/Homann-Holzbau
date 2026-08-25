@@ -3,11 +3,11 @@
 from PIL import Image, ImageDraw, ImageFilter
 import numpy as np
 from scipy import ndimage
-import re
+import re, os
 
 IFC = 'vordach.ifc'
 PHOTO = 'haus_neu.jpg'
-HN = np.load('homography.npy')         # Wandebene exakt aus dem Foto-Fit
+HN = np.load('homography2.npy')         # Wandebene exakt aus dem Foto-Fit
 
 # ---------------- mini IFC parser (tessellierte Geometrie) ----------------
 ents = {}
@@ -109,16 +109,18 @@ def H_uv(Y, Z):
     den = HN[2]*Y + 1.0
     return (HN[0]*Y + HN[1])/den, (HN[3]*Z + HN[4]*Y + HN[5])/den
 
-UE, VE, DV = 676.0, 978.0, 80.0        # Epipol (Bildmitte des Vordachs, Augenhoehe), virtuelle Distanz
+VARIANTE = os.environ.get('VARIANTE', 'A')
+UE, VE = 707.5, 986.7                  # Epipol: Vordach-Mitte, Augenhoehe
+DV = 80.0 if VARIANTE == 'A' else 10.0
 CPOS = np.array([DV, 3.4, 1.3])
 SS = 3
 
 def proj(p):
     x, y, z = p                         # x=Tiefe(0 Wand), y=Breite, z=Hoehe
     u0, v0 = H_uv(y, z)
-    s = x / (DV - x)
-    u = UE + (u0 - UE) * (1.0 + s)
-    v = VE + (v0 - VE) * (1.0 + s)
+    s = 1.0 + x / (DV - x)
+    u = UE + (u0 - UE) * s
+    v = VE + (v0 - VE) * s
     return (u * SS, v * SS, DV - x)
 
 def proj1(p):
@@ -128,16 +130,19 @@ def proj1(p):
 # ---------------- Gelaende: Pfostenfuesse loesen ----------------
 DROP = -0.30                            # Vordach steht ~30 cm unter Tuerschwellen-Niveau
 def t_wall(u):  return 1258 - 0.095 * (u - 256)
-def t_front(u): return 1310 - 0.080 * (u - 300)
+T_FRONT_OFFSET = 25.0 if VARIANTE == 'A' else 200.0
+def t_front(u): return t_wall(u) + T_FRONT_OFFSET
 
 POSTS = {(0.06, 0.61): t_wall, (0.06, 6.19): t_wall,
          (3.94, 0.61): t_front, (3.94, 6.19): t_front}
 GROUND = {}
 for (px, py), tf in POSTS.items():
     g = -0.4
-    for _ in range(6):
+    for _ in range(10):
         u, v = proj1((px, py, g))
-        g -= (tf(u) - v) / 130.0        # dv/dg ist negativ (~130 px/m)
+        u2, v2 = proj1((px, py, g + 0.05))
+        dvdg = (v2 - v) / 0.05
+        g += (tf(u) - v) / dvdg
     GROUND[(px, py)] = g
 print("Gelaende je Pfosten:", {k: round(v, 2) for k, v in GROUND.items()})
 
@@ -234,12 +239,17 @@ ground = draw_mask([('ellipse', (280, 1170, 1340, 1330), 255)], 48) * 0.10
 
 feet = {k: proj1((k[0], k[1], g)) for k, g in GROUND.items()}
 print("Fuesse:", {k: (round(u), round(v)) for k, (u, v) in feet.items()})
+def foot_visible(k, u, v):
+    if k == (0.06, 6.19): return False
+    if 930 < u < 1130 and 1150 < v < 1320: return False
+    return True
 contact = draw_mask(
     [('ellipse', (u - 40, v - 10, u + 40, v + 10), 255)
-     for k, (u, v) in feet.items() if k not in ((0.06, 6.19), (3.94, 6.19))], 9) * 0.26
+     for k, (u, v) in feet.items() if foot_visible(k, u, v)], 9) * 0.26
 shade = np.clip(wall + ground + contact, 0, 0.4)
 base *= (1 - shade[..., None])
 out = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
 out.paste(sprite, (0, 0), sprite)
-out.save('final_ifc.jpg', quality=93)
-print("final_ifc.jpg gespeichert")
+OUT = 'Vordach_kompakt.jpg' if VARIANTE == 'A' else 'Vordach_tief.jpg'
+out.save(OUT, quality=93)
+print(OUT, 'gespeichert')
