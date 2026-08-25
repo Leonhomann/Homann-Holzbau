@@ -7,7 +7,7 @@ import re
 
 IFC = 'vordach.ifc'
 PHOTO = 'haus_neu.jpg'
-CAM = np.load('camera_D40.npy')        # f, D, yaw, pitch, yc, zc  (Fit an Wand-Homographie)
+HN = np.load('homography.npy')         # Wandebene exakt aus dem Foto-Fit
 
 # ---------------- mini IFC parser (tessellierte Geometrie) ----------------
 ents = {}
@@ -104,22 +104,22 @@ for eid, (typ, _) in ents.items():
                 polys.append([gpts[int(i) - 1] for i in idx])
     elements.append((name, eid, polys))
 
-# ---------------- Kamera (aus Fit) ----------------
-F_, D_, TH, PH, YC, ZC = CAM
-ct, st = np.cos(TH), np.sin(TH)
-cp, sp_ = np.cos(PH), np.sin(PH)
-FWD = np.array([-ct*cp, st*cp, sp_])
-RGT = np.array([st, ct, 0.0])
-UP = np.cross(RGT, FWD)
-CPOS = np.array([D_, YC, ZC])
+# ---------------- Projektion: Wand exakt per Homographie, Tiefe symmetrisch ----------------
+def H_uv(Y, Z):
+    den = HN[2]*Y + 1.0
+    return (HN[0]*Y + HN[1])/den, (HN[3]*Z + HN[4]*Y + HN[5])/den
+
+UE, VE, DV = 676.0, 978.0, 80.0        # Epipol (Bildmitte des Vordachs, Augenhoehe), virtuelle Distanz
+CPOS = np.array([DV, 3.4, 1.3])
 SS = 3
 
 def proj(p):
-    P = np.array([p[0], p[1], p[2]]) - CPOS
-    den = P @ FWD
-    u = 750 + F_ * (P @ RGT) / den
-    v = 1000 - F_ * (P @ UP) / den
-    return (u * SS, v * SS, den)
+    x, y, z = p                         # x=Tiefe(0 Wand), y=Breite, z=Hoehe
+    u0, v0 = H_uv(y, z)
+    s = x / (DV - x)
+    u = UE + (u0 - UE) * (1.0 + s)
+    v = VE + (v0 - VE) * (1.0 + s)
+    return (u * SS, v * SS, DV - x)
 
 def proj1(p):
     u, v, _ = proj(p)
@@ -236,7 +236,7 @@ feet = {k: proj1((k[0], k[1], g)) for k, g in GROUND.items()}
 print("Fuesse:", {k: (round(u), round(v)) for k, (u, v) in feet.items()})
 contact = draw_mask(
     [('ellipse', (u - 40, v - 10, u + 40, v + 10), 255)
-     for k, (u, v) in feet.items() if k != (0.06, 6.19)], 9) * 0.26
+     for k, (u, v) in feet.items() if k not in ((0.06, 6.19), (3.94, 6.19))], 9) * 0.26
 shade = np.clip(wall + ground + contact, 0, 0.4)
 base *= (1 - shade[..., None])
 out = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
