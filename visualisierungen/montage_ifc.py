@@ -7,7 +7,8 @@ import re, os
 
 IFC = 'vordach.ifc'
 PHOTO = 'haus_neu.jpg'
-HN = np.load('homography2.npy')         # Wandebene exakt aus dem Foto-Fit
+HN = np.load('homography3.npy')
+EPI = np.load('epipol.npy')         # Wandebene exakt aus dem Foto-Fit
 
 # ---------------- mini IFC parser (tessellierte Geometrie) ----------------
 ents = {}
@@ -110,9 +111,9 @@ def H_uv(Y, Z):
     return (HN[0]*Y + HN[1])/den, (HN[3]*Z + HN[4]*Y + HN[5])/den
 
 VARIANTE = os.environ.get('VARIANTE', 'A')
-UE, VE = 707.5, 986.7                  # Epipol: Vordach-Mitte, Augenhoehe
+UE, VE = float(EPI[0]), float(EPI[1])  # Epipol = echter Kamerastandpunkt (links)
 DV = 80.0 if VARIANTE == 'A' else 10.0
-CPOS = np.array([DV, 3.4, 1.3])
+CPOS = np.array([DV, 0.5, 1.3])
 SS = 3
 
 def proj(p):
